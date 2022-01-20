@@ -1,1 +1,3 @@
-to use run `go run explorer.go 2>log.txt` - left click and enter on directories navigates - more features to come
+to use run `go run explorer.go 2>log.txt` - left click and enter on directories navigates
+to make an optimized build, try `go build -ldflags "-s -w" explorer.go`
+more features to come

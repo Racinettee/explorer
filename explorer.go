@@ -1,6 +1,7 @@
 package main
 
 import (
+	"archive/zip"
 	"fmt"
 	"log"
 	"os"
@@ -87,6 +88,25 @@ func (explorer *FileExplorer) LoadDir(path string) error {
 			explorer.flistBox.AddItem(fileInfo.Name())
 		}
 	}
+	explorer.SetTitle(fmt.Sprintf("Exploring: %v", dirInfo.Name()))
+	return nil
+}
+
+func (explorer *FileExplorer) LoadZip(path string) error {
+	zipf, err := zip.OpenReader(path)
+
+	if err != nil {
+		return err
+	}
+	defer zipf.Close()
+	explorer.currentDir = path
+	explorer.flistBox.Clear()
+
+	explorer.flistBox.AddItem("..")
+	for _, file := range zipf.File {
+		explorer.flistBox.AddItem(file.Name)
+	}
+
 	return nil
 }
 
@@ -117,6 +137,11 @@ func fileItemClickedHandler(explorer *FileExplorer) func(ui.Event) {
 		fileStats, err := file.Stat()
 		if err != nil {
 			log.Println(err)
+			return
+		}
+		log.Printf("Naving to: %v", path)
+		if strings.HasSuffix(fileStats.Name(), ".zip") {
+			explorer.LoadZip(path)
 			return
 		}
 		if fileStats.IsDir() {
