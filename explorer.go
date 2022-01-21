@@ -2,6 +2,7 @@ package main
 
 import (
 	"archive/zip"
+	"path/filepath"
 	"fmt"
 	"log"
 	"os"
@@ -114,9 +115,34 @@ func main() {
 	ui.InitLibrary()
 	defer ui.DeinitLibrary()
 
-	CreateFileExplorer(0, 0, 30, 20, "./")
+	initPath, err := resolveInitialPath()
+
+	if err != nil {
+		log.Println(err)
+	}
+	log.Printf("Starting explorer @ %v\n", initPath)
+	CreateFileExplorer(0, 0, 30, 20, initPath)
 	
 	ui.MainLoop()
+}
+
+func resolveInitialPath() (result string, err error) {
+	result, err = os.Getwd()
+	if err != nil {
+		return ".", err
+	}
+	switch {
+		case len(os.Args) == 1:
+			return
+		case len(os.Args) > 1:
+			if os.Args[1] == "." {
+				return result, nil
+			}
+			if os.Args[1] == ".." {
+				result, err = filepath.Abs(os.Args[1])
+			}
+	}
+	return
 }
 
 func root() string {
@@ -126,8 +152,8 @@ func root() string {
 
 func fileItemClickedHandler(explorer *FileExplorer) func(ui.Event) {
 	return func(ev ui.Event) {
-		path := explorer.currentDir+string(os.PathSeparator)+
-			explorer.flistBox.SelectedItemText()
+		path, _ := filepath.Abs(explorer.currentDir+string(os.PathSeparator)+
+			explorer.flistBox.SelectedItemText())
 		file, err := os.Open(path)
 
 		if err != nil {
