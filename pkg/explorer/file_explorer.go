@@ -13,12 +13,15 @@ import (
 
 type FileExplorer struct {
 	*ui.Window
-	currentDir string
-	flistBox   *FileListBox
+	currentDir         string
+	flistBox           *FileListBox
+	EnableBackwardsNav bool
+	OnItemClicked      func(path string)
 }
 
 func CreateFileExplorer(x, y, w, h int, initialDir string) (*FileExplorer, error) {
 	explorer := new(FileExplorer)
+	explorer.EnableBackwardsNav = true
 	explorer.Window = ui.AddWindow(x, y, w, h, "Explorer")
 	explorer.flistBox = CreateFileListBox(explorer, w, h, 1)
 	explorer.flistBox.itemClickHandler = fileItemClickedHandler(explorer)
@@ -52,7 +55,9 @@ func (explorer *FileExplorer) LoadDir(path string) error {
 	explorer.currentDir = path
 	explorer.flistBox.Clear()
 	if path != root() {
-		explorer.flistBox.AddItem("..")
+		if explorer.EnableBackwardsNav {
+			explorer.flistBox.AddItem("..")
+		}
 	}
 
 	for _, fileInfo := range subFileInfos {
@@ -106,6 +111,9 @@ func fileItemClickedHandler(explorer *FileExplorer) func(ui.Event) {
 		}
 		if fileStats.IsDir() {
 			explorer.LoadDir(path)
+		}
+		if explorer.OnItemClicked != nil {
+			explorer.OnItemClicked(path)
 		}
 	}
 }
